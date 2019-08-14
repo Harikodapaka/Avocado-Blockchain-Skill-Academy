@@ -1,0 +1,139 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+version: '2'
+
+volumes:
+  orderer.avocadofederation.com:
+  peer0.faf.avocadofederation.com:
+  peer1.faf.avocadofederation.com:
+  peer0.supplier.avocadofederation.com:
+  peer1.supplier.avocadofederation.com:
+  peer0.transport.avocadofederation.com:
+  peer1.transport.avocadofederation.com:
+
+networks:
+  fafnetwork:
+
+services:
+
+  orderer.avocadofederation.com:
+    extends:
+      file:   base/docker-compose-base.yaml
+      service: orderer.avocadofederation.com
+    container_name: orderer.avocadofederation.com
+    networks:
+      - fafnetwork
+
+  peer0.faf.avocadofederation.com:
+    container_name: peer0.faf.avocadofederation.com
+    extends:
+      file:  base/docker-compose-base.yaml
+      service: peer0.faf.avocadofederation.com
+    networks:
+      - fafnetwork
+
+  peer1.faf.avocadofederation.com:
+    container_name: peer1.faf.avocadofederation.com
+    extends:
+      file:  base/docker-compose-base.yaml
+      service: peer1.faf.avocadofederation.com
+    networks:
+      - fafnetwork
+
+  peer0.supplier.avocadofederation.com:
+    container_name: peer0.supplier.avocadofederation.com
+    extends:
+      file:  base/docker-compose-base.yaml
+      service: peer0.supplier.avocadofederation.com
+    networks:
+      - fafnetwork
+
+  peer1.supplier.avocadofederation.com:
+    container_name: peer1.supplier.avocadofederation.com
+    extends:
+      file:  base/docker-compose-base.yaml
+      service: peer1.supplier.avocadofederation.com
+    networks:
+      - fafnetwork
+
+  peer0.transport.avocadofederation.com:
+    container_name: peer0.transport.avocadofederation.com
+    extends:
+      file:  base/docker-compose-base.yaml
+      service: peer0.transport.avocadofederation.com
+    networks:
+      - fafnetwork
+
+  peer1.transport.avocadofederation.com:
+    container_name: peer1.transport.avocadofederation.com
+    extends:
+      file:  base/docker-compose-base.yaml
+      service: peer1.transport.avocadofederation.com
+    networks:
+      - fafnetwork      
+
+  cli:
+    container_name: cli
+    image: hyperledger/fabric-tools:$IMAGE_TAG
+    tty: true
+    stdin_open: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      #- FABRIC_LOGGING_SPEC=DEBUG
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_ID=cli
+      - CORE_PEER_ADDRESS=peer0.faf.avocadofederation.com:7051
+      - CORE_PEER_LOCALMSPID=FAFMSP
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/faf.avocadofederation.com/peers/peer0.faf.avocadofederation.com/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/faf.avocadofederation.com/peers/peer0.faf.avocadofederation.com/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/faf.avocadofederation.com/peers/peer0.faf.avocadofederation.com/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/faf.avocadofederation.com/users/Admin@faf.avocadofederation.com/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./chaincode/:/opt/gopath/src/github.com/chaincode
+        - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
+        - ./scripts:/opt/gopath/src/github.com/hyperledger/fabric/peer/scripts/
+        - ./channel-artifacts:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts
+    depends_on:
+      - orderer.avocadofederation.com
+      - peer0.faf.avocadofederation.com
+      - peer1.faf.avocadofederation.com
+      - peer0.supplier.avocadofederation.com
+      - peer1.supplier.avocadofederation.com
+      - peer0.transport.avocadofederation.com
+      - peer1.transport.avocadofederation.com
+    networks:
+      - fafnetwork
+
+  chaincode:
+    container_name: chaincode
+    image: hyperledger/fabric-ccenv
+    tty: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_ID=agilenet02
+      - CORE_PEER_ADDRESS=peer0.faf.avocadofederation.com:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_MSPCONFIGPATH=etc/hyperledger/msp
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+    working_dir: /opt/gopath/src/chaincode
+    command: /bin/bash -c 'sleep 6000000'
+    volumes:
+      - /var/run/:/host/var/run/
+      - ./crypto-config:/etc/hyperledger/msp
+      - ./chaincode:/opt/gopath/src/chaincode
+    depends_on:
+      - orderer.avocadofederation.com
+      - peer0.faf.avocadofederation.com

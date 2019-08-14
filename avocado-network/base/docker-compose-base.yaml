@@ -1,0 +1,156 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+version: '2'
+
+services:
+
+  orderer.avocadofederation.com:
+    container_name: orderer.avocadofederation.com
+    image: hyperledger/fabric-orderer:$IMAGE_TAG
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=/var/hyperledger/orderer/orderer.genesis.block
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
+      # enabled TLS
+      - ORDERER_GENERAL_TLS_ENABLED=true
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_KAFKA_TOPIC_REPLICATIONFACTOR=1
+      - ORDERER_KAFKA_VERBOSE=true
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: orderer
+    volumes:
+      - ../channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+      - ../crypto-config/ordererOrganizations/avocadofederation.com/orderers/orderer.avocadofederation.com/msp:/var/hyperledger/orderer/msp
+      - ../crypto-config/ordererOrganizations/avocadofederation.com/orderers/orderer.avocadofederation.com/tls/:/var/hyperledger/orderer/tls
+      - orderer.avocadofederation.com:/var/hyperledger/production/orderer
+    ports:
+      - 7050:7050
+
+  peer0.faf.avocadofederation.com:
+    container_name: peer0.faf.avocadofederation.com
+    extends:
+      file: peer-base.yaml
+      service: peer-base
+    environment:
+      - CORE_PEER_ID=peer0.faf.avocadofederation.com
+      - CORE_PEER_ADDRESS=peer0.faf.avocadofederation.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer1.faf.avocadofederation.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.faf.avocadofederation.com:7051
+      - CORE_PEER_LOCALMSPID=FAFMSP
+    volumes:
+      - /var/run/:/host/var/run/
+      - ../crypto-config/peerOrganizations/faf.avocadofederation.com/peers/peer0.faf.avocadofederation.com/msp:/etc/hyperledger/fabric/msp
+      - ../crypto-config/peerOrganizations/faf.avocadofederation.com/peers/peer0.faf.avocadofederation.com/tls:/etc/hyperledger/fabric/tls
+      - peer0.faf.avocadofederation.com:/var/hyperledger/production
+    ports:
+      - 7051:7051
+      - 7053:7053
+
+  peer1.faf.avocadofederation.com:
+    container_name: peer1.faf.avocadofederation.com
+    extends:
+      file: peer-base.yaml
+      service: peer-base
+    environment:
+      - CORE_PEER_ID=peer1.faf.avocadofederation.com
+      - CORE_PEER_ADDRESS=peer1.faf.avocadofederation.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.faf.avocadofederation.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.faf.avocadofederation.com:7051
+      - CORE_PEER_LOCALMSPID=FAFMSP
+    volumes:
+      - /var/run/:/host/var/run/
+      - ../crypto-config/peerOrganizations/faf.avocadofederation.com/peers/peer1.faf.avocadofederation.com/msp:/etc/hyperledger/fabric/msp
+      - ../crypto-config/peerOrganizations/faf.avocadofederation.com/peers/peer1.faf.avocadofederation.com/tls:/etc/hyperledger/fabric/tls
+      - peer1.faf.avocadofederation.com:/var/hyperledger/production
+
+    ports:
+      - 8051:7051
+      - 8053:7053
+
+  peer0.supplier.avocadofederation.com:
+    container_name: peer0.supplier.avocadofederation.com
+    extends:
+      file: peer-base.yaml
+      service: peer-base
+    environment:
+      - CORE_PEER_ID=peer0.supplier.avocadofederation.com
+      - CORE_PEER_ADDRESS=peer0.supplier.avocadofederation.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.supplier.avocadofederation.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer1.supplier.avocadofederation.com:7051
+      - CORE_PEER_LOCALMSPID=SupplierMSP
+    volumes:
+        - /var/run/:/host/var/run/
+        - ../crypto-config/peerOrganizations/supplier.avocadofederation.com/peers/peer0.supplier.avocadofederation.com/msp:/etc/hyperledger/fabric/msp
+        - ../crypto-config/peerOrganizations/supplier.avocadofederation.com/peers/peer0.supplier.avocadofederation.com/tls:/etc/hyperledger/fabric/tls
+        - peer0.supplier.avocadofederation.com:/var/hyperledger/production
+    ports:
+      - 9051:7051
+      - 9053:7053
+
+  peer1.supplier.avocadofederation.com:
+    container_name: peer1.supplier.avocadofederation.com
+    extends:
+      file: peer-base.yaml
+      service: peer-base
+    environment:
+      - CORE_PEER_ID=peer1.supplier.avocadofederation.com
+      - CORE_PEER_ADDRESS=peer1.supplier.avocadofederation.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.supplier.avocadofederation.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.supplier.avocadofederation.com:7051
+      - CORE_PEER_LOCALMSPID=SupplierMSP
+    volumes:
+      - /var/run/:/host/var/run/
+      - ../crypto-config/peerOrganizations/supplier.avocadofederation.com/peers/peer1.supplier.avocadofederation.com/msp:/etc/hyperledger/fabric/msp
+      - ../crypto-config/peerOrganizations/supplier.avocadofederation.com/peers/peer1.supplier.avocadofederation.com/tls:/etc/hyperledger/fabric/tls
+      - peer1.supplier.avocadofederation.com:/var/hyperledger/production
+    ports:
+      - 10051:7051
+      - 10053:7053
+
+  peer0.transport.avocadofederation.com:
+    container_name: peer0.transport.avocadofederation.com
+    extends:
+      file: peer-base.yaml
+      service: peer-base
+    environment:
+      - CORE_PEER_ID=peer0.transport.avocadofederation.com
+      - CORE_PEER_ADDRESS=peer0.transport.avocadofederation.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.transport.avocadofederation.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer1.transport.avocadofederation.com:7051
+      - CORE_PEER_LOCALMSPID=TransportMSP
+    volumes:
+      - /var/run/:/host/var/run/
+      - ../crypto-config/peerOrganizations/transport.avocadofederation.com/peers/peer0.transport.avocadofederation.com/msp:/etc/hyperledger/fabric/msp
+      - ../crypto-config/peerOrganizations/transport.avocadofederation.com/peers/peer0.transport.avocadofederation.com/tls:/etc/hyperledger/fabric/tls
+      - peer0.transport.avocadofederation.com:/var/hyperledger/production
+    ports:
+      - 11051:7051
+      - 11053:7053
+
+  peer1.transport.avocadofederation.com:
+    container_name: peer1.transport.avocadofederation.com
+    extends:
+      file: peer-base.yaml
+      service: peer-base
+    environment:
+      - CORE_PEER_ID=peer1.transport.avocadofederation.com
+      - CORE_PEER_ADDRESS=peer1.transport.avocadofederation.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.transport.avocadofederation.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.transport.avocadofederation.com:7051
+      - CORE_PEER_LOCALMSPID=TransportMSP
+    volumes:
+      - /var/run/:/host/var/run/
+      - ../crypto-config/peerOrganizations/transport.avocadofederation.com/peers/peer1.transport.avocadofederation.com/msp:/etc/hyperledger/fabric/msp
+      - ../crypto-config/peerOrganizations/transport.avocadofederation.com/peers/peer1.transport.avocadofederation.com/tls:/etc/hyperledger/fabric/tls
+      - peer1.transport.avocadofederation.com:/var/hyperledger/production
+    ports:
+      - 12051:7051
+      - 12053:7053
